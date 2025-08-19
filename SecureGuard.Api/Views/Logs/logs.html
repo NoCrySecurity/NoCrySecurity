@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Logs de Segurança</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #191c24; color: #e5e5e5; }
+    .table thead { background: #222733; color: #82e8e8; }
+    .card { background: #222733; border-radius: 12px; border: none; }
+    .btn-primary { background: #400cfb; border: none; }
+    .btn-primary:hover { background: #09175f; }
+    .dropdown-menu { background: #fbfbfb; color: #191c24; }
+    .dropdown-item:active, .dropdown-item.active { background: #19d1c9; color: #191c24; }
+    .badge { border-radius: 8px; font-size: .97em; }
+    @media (max-width: 600px) {
+      .card { padding: 0.5rem !important; }
+      .table th, .table td { font-size: 0.94rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container py-4">
+  <div class="text-center mb-4">
+    <h2>Logs de Segurança</h2>
+    <small class="text-secondary">Monitoramento e inserção de eventos críticos</small>
+  </div>
+
+  <div class="card p-3 mb-4">
+    <div class="row mb-3 g-2 align-items-center">
+      <div class="col-md-4 mb-2 mb-md-0">
+        <input type="text" id="filtro" class="form-control" placeholder="Filtrar por título ou tipo...">
+      </div>
+      <div class="col-md-4 mb-2 mb-md-0">
+        <select id="ordenacao" class="form-select">
+          <option value="">Ordenar por...</option>
+          <option value="data">Data</option>
+          <option value="risco">Risco</option>
+          <option value="nome">Título</option>
+        </select>
+      </div>
+      <div class="col-md-4 text-end">
+        <div class="btn-group w-100 w-md-auto">
+          <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+            Inserir Log
+          </button>
+          <ul id="dropdownLogs" class="dropdown-menu"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Tipo</th>
+            <th>Data</th>
+            <th>Risco</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaLogs"></tbody>
+      </table>
+    </div>
+    <div id="statusLogs" class="text-center text-warning py-2" style="display:none"></div>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <button class="btn btn-secondary" id="anterior" disabled>Anterior</button>
+      <span id="infoPaginacao"></span>
+      <button class="btn btn-secondary" id="proxima" disabled>Próxima</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  let paginaAtual = 1;
+  const limitePorPagina = 10;
+  let totalLogs = 0;
+
+  // Badge para risco
+  function gerarBadgeRisco(risco) {
+    if (risco >= 4) return `<span class="badge bg-danger">Crítico</span>`;
+    if (risco === 3) return `<span class="badge bg-danger">Alto</span>`;
+    if (risco === 2) return `<span class="badge bg-warning text-dark">Médio</span>`;
+    if (risco === 1) return `<span class="badge bg-info">Baixo</span>`;
+    return `<span class="badge bg-secondary">Info</span>`;
+  }
+
+  // Lista de opções para o dropdown
+  const opcoesLogs = [
+    { id: "NovoArquivo", nome: "Novo Arquivo" },
+    { id: "ArquivoSuspeito", nome: "Arquivo Suspeito" },
+    { id: "CriptografiaSuspeita", nome: "Criptografia Suspeita" },
+    { id: "ArquivoRemovido", nome: "Arquivo Removido" },
+    { id: "AcessoNaoAutorizado", nome: "Acesso Não Autorizado" },
+    { id: "AlteracaoRegistro", nome: "Alteração de Registro" },
+    { id: "ProcessoDesconhecido", nome: "Processo Desconhecido" },
+    { id: "BloqueioRansomware", nome: "Bloqueio de Ransomware" },
+    { id: "Custom", nome: "Custom (POST /api/logs)" }
+  ];
+
+  function preencherDropdownLogs() {
+    const ul = document.getElementById("dropdownLogs");
+    ul.innerHTML = '';
+    opcoesLogs.forEach(opt => {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.className = "dropdown-item";
+      a.href = "#";
+      a.textContent = opt.nome;
+      a.onclick = () => {
+        if (opt.id === "Custom") {
+          inserirLogCustom();
+        } else {
+          enviarEvento(opt.id, `Evento acionado via UI: ${opt.nome}`);
+        }
+      };
+      li.appendChild(a);
+      ul.appendChild(li);
+    });
+  }
+
+  function mapOrdenacao(valor) {
+    switch ((valor || '').toLowerCase()) {
+      case "data": return "data_desc";
+      case "risco": return "risco_desc";
+      case "nome": return "tipo_desc";
+      default: return "data_desc";
+    }
+  }
+
+  function mapTipoDescricao(tipo) {
+    const map = {
+      0: "NovoArquivo",
+      1: "ArquivoSuspeito",
+      2: "CriptografiaSuspeita",
+      3: "ArquivoRemovido",
+      4: "AcessoNaoAutorizado",
+      5: "AlteracaoRegistro",
+      6: "ProcessoDesconhecido",
+      7: "BloqueioRansomware"
+    };
+    return map[tipo] ?? String(tipo);
+  }
+
+  // Renderiza tabela
+  function renderTabela(lista) {
+    const tabela = document.getElementById("tabelaLogs");
+    tabela.innerHTML = '';
+    for (const l of lista) {
+      const linha = document.createElement("tr");
+      linha.innerHTML = `
+        <td class="text-break">${l.caminho ?? l.path ?? "-"}</td>
+        <td>${mapTipoDescricao(l.tipo ?? l.Tipo)}</td>
+        <td>${gerarBadgeRisco(l.risco ?? l.Risco ?? 0)}</td>
+        <td>${new Date(l.criadoEmUtc ?? l.createdAtUtc ?? l.CreatedAtUtc ?? Date.now()).toLocaleString()}</td>
+      `;
+      tabela.appendChild(linha);
+    }
+  }
+
+  // Busca logs
+  async function carregarLogs(pagina = 1) {
+    const tabela = document.getElementById("tabelaLogs");
+    const status = document.getElementById("statusLogs");
+    tabela.innerHTML = '';
+    status.style.display = "none";
+
+    const filtro = document.getElementById("filtro").value;
+    const ordenacao = mapOrdenacao(document.getElementById("ordenacao").value);
+
+    const params = new URLSearchParams({
+      Busca: filtro || "",
+      OrdenarPor: ordenacao,
+      Pagina: String(pagina),
+      TamanhoPagina: String(limitePorPagina)
+    });
+
+    try {
+      const resp = await fetch(`/api/logs?${params.toString()}`);
+      if (!resp.ok) throw new Error("Erro ao carregar logs.");
+      const data = await resp.json();
+      // Suporta tanto o novo shape (Itens/TotalItens/...) quanto algum legacy
+      const lista = data.Itens ?? data.itens ?? data.logs ?? [];
+      totalLogs = data.TotalItens ?? data.total ?? lista.length;
+      paginaAtual = data.Pagina ?? data.page ?? pagina;
+
+      if (!lista.length) {
+        tabela.innerHTML = `<tr><td colspan="4" class="text-center text-secondary">Nenhum log encontrado.</td></tr>`;
+      } else {
+        renderTabela(lista);
+      }
+
+      const totalPaginas = Math.max(1, Math.ceil(totalLogs / limitePorPagina));
+      document.getElementById("infoPaginacao").textContent = `Página ${paginaAtual} de ${totalPaginas}`;
+      document.getElementById("anterior").disabled = paginaAtual <= 1;
+      document.getElementById("proxima").disabled = paginaAtual >= totalPaginas;
+    } catch (err) {
+      status.style.display = "";
+      status.innerText = "Erro ao buscar logs. Verifique se o backend .NET está rodando!";
+      tabela.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Erro ao buscar logs.</td></tr>`;
+    }
+  }
+
+  // POST /api/logs (custom)
+  async function inserirLogCustom() {
+    const payload = {
+      mensagem: "Log personalizada.",
+      caminho: "Interface",
+      processo: "UI",
+      risco: 1,
+      tipo: 1
+    };
+    try {
+      const response = await fetch('/api/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (response.ok) {
+        await carregarLogs(paginaAtual);
+      } else {
+        alert("Erro ao inserir log.");
+      }
+    } catch (e) {
+      alert("Falha de rede ao inserir log.");
+    }
+  }
+
+  // POST /api/logs/event/{tipo}
+  async function enviarEvento(tipo, mensagem) {
+    const body = {
+      mensagem: mensagem || `Evento: ${tipo}`,
+      risco: 1
+    };
+    try {
+      const response = await fetch(`/api/logs/event/${encodeURIComponent(tipo)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (response.ok) {
+        await carregarLogs(paginaAtual);
+      } else {
+        alert("Erro ao enviar evento.");
+      }
+    } catch (e) {
+      alert("Falha de rede ao enviar evento.");
+    }
+  }
+
+  document.getElementById("anterior").onclick = () => {
+    if (paginaAtual > 1) carregarLogs(paginaAtual - 1);
+  };
+  document.getElementById("proxima").onclick = () => {
+    const totalPaginas = Math.ceil(totalLogs / limitePorPagina);
+    if (paginaAtual < totalPaginas) carregarLogs(paginaAtual + 1);
+  };
+
+  document.getElementById("filtro").addEventListener("input", () => carregarLogs(1));
+  document.getElementById("ordenacao").addEventListener("change", () => carregarLogs(1));
+
+  window.onload = function () {
+    preencherDropdownLogs();
+    carregarLogs(1);
+  };
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

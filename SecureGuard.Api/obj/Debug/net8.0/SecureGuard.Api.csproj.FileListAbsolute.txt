@@ -1,0 +1,10 @@
+C:\Users\annun\OneDrive\Documents\FIAP\FIAP-CyberSecurity\Challenge\SecureGuard.Api\obj\Debug\net8.0\SecureGuard.Api.csproj.AssemblyReference.cache
+C:\Users\annun\OneDrive\Documents\FIAP\FIAP-CyberSecurity\Challenge\SecureGuard.Api\obj\Debug\net8.0\SecureGuard.Api.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\annun\OneDrive\Documents\FIAP\FIAP-CyberSecurity\Challenge\SecureGuard.Api\obj\Debug\net8.0\SecureGuard.Api.AssemblyInfoInputs.cache
+C:\Users\annun\OneDrive\Documents\FIAP\FIAP-CyberSecurity\Challenge\SecureGuard.Api\obj\Debug\net8.0\SecureGuard.Api.AssemblyInfo.cs
+C:\Users\annun\OneDrive\Documents\FIAP\FIAP-CyberSecurity\Challenge\SecureGuard.Api\obj\Debug\net8.0\SecureGuard.Api.csproj.CoreCompileInputs.cache
+C:\Users\annun\OneDrive\Documents\FIAP\FIAP-CyberSecurity\Challenge\SecureGuard.Api\obj\Debug\net8.0\SecureGuard.Api.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\annun\OneDrive\Documents\FIAP\FIAP-CyberSecurity\Challenge\SecureGuard.Api\obj\Debug\net8.0\SecureGuard.Api.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\annun\OneDrive\Documents\FIAP\FIAP-CyberSecurity\Challenge\SecureGuard.Api\obj\Debug\net8.0\SecureGuard.Api.RazorAssemblyInfo.cache
+C:\Users\annun\OneDrive\Documents\FIAP\FIAP-CyberSecurity\Challenge\SecureGuard.Api\obj\Debug\net8.0\SecureGuard.Api.RazorAssemblyInfo.cs
+C:\Users\annun\OneDrive\Documents\FIAP\FIAP-CyberSecurity\Challenge\SecureGuard.Api\obj\Debug\net8.0\SecureGuard.Api.sourcelink.json

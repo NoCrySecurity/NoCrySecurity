@@ -1,0 +1,185 @@
+@{
+    ViewData["Title"] = "Logs de Segurança";
+}
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>@ViewData["Title"]</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #191c24; color: #e5e5e5; }
+    .table thead { background: #222733; color: #82e8e8; }
+    .card { background: #222733; border-radius: 12px; border: none; }
+    .btn-primary { background: #400cfb; border: none; }
+    .btn-primary:hover { background: #09175f; }
+    .dropdown-menu { background: #fbfbfb; color: #191c24; }
+    .dropdown-item:active, .dropdown-item.active { background: #19d1c9; color: #191c24; }
+    .badge { border-radius: 8px; font-size: .97em; }
+    @@media (max-width: 600px) {
+      .card { padding: 0.5rem !important; }
+      .table th, .table td { font-size: 0.94rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container py-4">
+  <div class="text-center mb-4">
+    <h2>Logs de Segurança</h2>
+    <small class="text-secondary">Monitoramento e inserção de eventos críticos</small>
+  </div>
+
+  <div class="card p-3 mb-4">
+    <div class="row mb-3 g-2 align-items-center">
+      <div class="col-md-4 mb-2 mb-md-0">
+        <input type="text" id="filtro" class="form-control" placeholder="Filtrar por título ou tipo...">
+      </div>
+      <div class="col-md-4 mb-2 mb-md-0">
+        <select id="ordenacao" class="form-select">
+          <option value="">Ordenar por...</option>
+          <option value="data">Data</option>
+          <option value="risco">Risco</option>
+          <option value="nome">Título</option>
+        </select>
+      </div>
+      <div class="col-md-4 text-end">
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Tipo</th>
+            <th>Data</th>
+            <th>Risco</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaLogs"></tbody>
+      </table>
+    </div>
+    <div id="statusLogs" class="text-center text-warning py-2" style="display:none"></div>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <button class="btn btn-secondary" id="anterior" disabled>Anterior</button>
+      <span id="infoPaginacao"></span>
+      <button class="btn btn-secondary" id="proxima" disabled>Próxima</button>
+    </div>
+  </div>
+</div>
+
+<!-- (scripts não modificados) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const tabela = document.getElementById('tabelaLogs');
+  const filtro = document.getElementById('filtro');
+  const ordenacao = document.getElementById('ordenacao');
+  const statusLogs = document.getElementById('statusLogs');
+  const anteriorBtn = document.getElementById('anterior');
+  const proximaBtn = document.getElementById('proxima');
+  const infoPaginacao = document.getElementById('infoPaginacao');
+  const dropdownLogs = document.getElementById('dropdownLogs');
+
+  let paginaAtual = 1;
+  const tamanhoPagina = 10;
+
+const LOGS_FIXOS = [
+  { titulo: 'Arquivo suspeito', tipo: 'ArquivoSuspeito', risco: 4 },
+  { titulo: 'Criptografia detectada', tipo: 'CriptografiaSuspeita', risco: 5 },
+  { titulo: 'Novo processo suspeito', tipo: 'ProcessoSuspeito', risco: 3 },
+  { titulo: 'Arquivo removido', tipo: 'ArquivoRemovido', risco: 2 },
+  { titulo: 'Acesso não autorizado', tipo: 'AcessoNaoAutorizado', risco: 5 }
+];
+
+ 
+
+  // Buscar logs da API
+  async function carregarLogs() {
+    const filtroTexto = filtro.value.toLowerCase();
+    const ordenar = ordenacao.value;
+
+    statusLogs.style.display = 'none';
+    tabela.innerHTML = '';
+    infoPaginacao.textContent = 'Carregando...';
+
+    try {
+      const response = await fetch(`/api/logs?filtro=${encodeURIComponent(filtroTexto)}&ordenarPor=${ordenar}&pagina=${paginaAtual}`);
+      if (!response.ok) throw new Error('Erro ao buscar logs');
+
+      const data = await response.json();
+      const { logs, totalPaginas } = data;
+
+      if (!logs.length) {
+        tabela.innerHTML = '<tr><td colspan="4" class="text-center text-warning">Nenhum log encontrado.</td></tr>';
+        anteriorBtn.disabled = true;
+        proximaBtn.disabled = true;
+        infoPaginacao.textContent = '';
+        return;
+      }
+
+      logs.forEach(log => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${log.mensagem}</td>
+          <td>${log.tipo}</td>
+          <td>${new Date(log.criadoEmUtc).toLocaleString()}</td>
+          <td><span class="badge bg-${definirCorRisco(log.risco)}">${log.risco}</span></td>
+        `;
+        tabela.appendChild(tr);
+      });
+
+      anteriorBtn.disabled = paginaAtual === 1;
+      proximaBtn.disabled = paginaAtual === totalPaginas;
+      infoPaginacao.textContent = `Página ${paginaAtual} de ${totalPaginas}`;
+    } catch (err) {
+      console.error(err);
+      statusLogs.textContent = 'Erro ao carregar os logs.';
+      statusLogs.style.display = 'block';
+    }
+  }
+
+  function definirCorRisco(risco) {
+    if (risco >= 4) return 'danger';
+    if (risco === 3) return 'warning';
+    return 'success';
+  }
+
+  // Inserir novo log
+  
+
+  // Eventos
+  filtro.addEventListener('input', () => {
+    paginaAtual = 1;
+    carregarLogs();
+  });
+
+  ordenacao.addEventListener('change', () => {
+    paginaAtual = 1;
+    carregarLogs();
+  });
+
+  anteriorBtn.addEventListener('click', () => {
+    if (paginaAtual > 1) {
+      paginaAtual--;
+      carregarLogs();
+    }
+  });
+
+  proximaBtn.addEventListener('click', () => {
+    paginaAtual++;
+    carregarLogs();
+  });
+
+  // Inicial
+  carregarLogs();
+});
+</script>
+
+
+
+</body>
+</html>

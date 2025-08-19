@@ -1,0 +1,27 @@
+is_global = true
+build_property.TargetFramework = net8.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = false
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = SecureGuard.Api
+build_property.RootNamespace = SecureGuard.Api
+build_property.ProjectDir = c:\Users\annun\OneDrive\Documents\FIAP\FIAP-CyberSecurity\Challenge\SecureGuard.Api\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.RazorLangVersion = 8.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = c:\Users\annun\OneDrive\Documents\FIAP\FIAP-CyberSecurity\Challenge\SecureGuard.Api
+build_property._RazorSourceGeneratorDebug = 
+
+[c:/Users/annun/OneDrive/Documents/FIAP/FIAP-CyberSecurity/Challenge/SecureGuard.Api/Views/Home/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[c:/Users/annun/OneDrive/Documents/FIAP/FIAP-CyberSecurity/Challenge/SecureGuard.Api/Views/Logs/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9nc1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
